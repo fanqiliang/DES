@@ -2,6 +2,7 @@
 #include<math.h>
 #include<string.h>
 #include<stdlib.h>
+#include<time.h>
 #include"table.h"
 
 int FLAG = 1;
@@ -9,6 +10,8 @@ int RoundKey[16][48];
 int tmp1[32];
 int cipher[8];
 int  Out[64];
+int  Out1[64];
+int PlaBit[64];
 
 void CharToBit(char *In, int flag);
 void BitToChar(int out[64]);
@@ -18,29 +21,6 @@ void LoopLeftandsub(int key_56[56]);
 void F(int data[64]);
 void S_Func(int B[8][6]);
 void RLANDIP_1(int R[32], int L[32]);
-
-void main() {
-    int i;
-    char ch;
-    char name[8] = "testdata";
-    char key[8] = "mydeskey";
-  
-    printf("i am here\n");
-    CharToBit(key, 0);
-    CharToBit(name, 1);
-    FLAG = 0;
-    CharToBit(key, 0);
-    Initplaint(Out);
-    for (i = 0; i < 8; i++) {
-        ch = (char)cipher[i];
-        printf("%c ", ch);
-    }
-    printf("\n");
-   
-
-    return;
-}
-
 
 void CharToBit(char *In, int flag) {
     char a;
@@ -64,6 +44,9 @@ void CharToBit(char *In, int flag) {
                 DATA[8*i+7-j] = a&1;
                 a = (char)((int) a >> 1);
             }
+        }
+        for (i = 0; i < 64; i++) {
+            PlaBit[i] = DATA[i];
         }
         Initplaint(DATA);
     }
@@ -212,9 +195,8 @@ void RLANDIP_1(int R[32], int L[32]) {
         }
         for (i = 0; i < 64; i++) {
             Out[i] = tmp2[IPR_Table[i]-1];
-            printf("%d ", Out[i]);
+            
         }
-        printf("\n");
         BitToChar(Out);
     }
 
@@ -232,7 +214,101 @@ void BitToChar(int out[64]) {
                 j++;
             }
             cipher[i] = x;
-
-
     }
+}
+
+void showInfo() {
+    printf("1. en");
+}
+
+void main() {
+    int  i;
+    char ch;
+    int  num = 0;
+    int  s;
+    int  t;
+    int  m = 0;
+    int  n = 1;
+    char name[8];// = "testdata";
+    char key[8]; //= "mydeskey";
+    time_t t_start;
+    time_t t_end;
+    
+    printf("please input 8 bytes for plaintext: ");
+    scanf("%s",name);
+    printf("please input 8 bytes for key: ");
+    scanf("%s",key);
+
+    //Encryption
+    CharToBit(key, 0);
+    CharToBit(name, 1);
+
+    for (i = 0; i < 64; i++) {
+        printf("%d ", Out[i]);
+        Out1[i] = Out[i];
+    }
+    printf("\n");
+    while (n == 1) {
+        printf("1. Decryption\n");
+        printf("2. Avalanche effect\n");
+        printf("3. Efficiency\n");
+        printf("0. exit\n");
+        printf("please input the number: ");
+        scanf("%d", &num);
+        // Decryption
+        if (num == 1) {
+            FLAG = 0;
+            CharToBit(key, 0);
+            Initplaint(Out);
+            for (i = 0; i < 8; i++) {
+                ch = (char)cipher[i];
+                printf("%c", ch);
+            }
+            printf("\n");
+        }
+        if (num == 2) {
+            printf("please input which bit of plaintext do you want?\n");
+            printf("please input the number: ");
+            scanf("%d", &s);
+            for (i = 0; i < 64; i++) {
+                if (s == i) {
+                printf("the number you input of plaintext bit is %d\n", PlaBit[i]);
+                printf("the inoput 1 or 0: ");
+                scanf("%d", &t);
+                PlaBit[i] = t;
+                CharToBit(key, 0);
+                Initplaint(PlaBit);
+                break;
+                }
+            }
+            for (i = 0; i < 64; i++) {
+                printf("%d ", Out1[i]);
+            }
+            printf("\n");
+            for (i = 0; i < 64; i++) {
+                printf("%d ", Out[i]);
+            }
+            printf("\n");
+            for (i = 0; i < 64; i++) {
+                if (Out1[i] == Out[i]) {
+                    m++;
+                }
+            }
+            printf("the different is %d\n", m);
+        }
+        if (num == 3) {
+            t_start = time(NULL);
+            for (i = 0; i < 100000; i++) {
+                CharToBit(key, 0);
+                CharToBit(name, 1);
+            }
+            t_end = time(NULL);
+            printf("the average time is %f\n", difftime(t_end, t_start)/10000);
+        }
+        if (num == 0) {
+            n = 0;
+            printf("exit successful!!!!!\n");
+        }
+    }
+
 }
