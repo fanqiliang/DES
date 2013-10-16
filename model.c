@@ -11,8 +11,10 @@ int RoundKey[16][48];
 int tmp1[32];
 int cipher[32][8];
 int  Out[32][64];
+int  Out2[32][64];
 int  Out1[64];
 int PlaBit[64];
+char KEY[8];
 static int T = 0;
 static int S = 0;
 
@@ -165,8 +167,8 @@ void F(int data[64]) {
 }
 
 void S_Func(int B[8][6]) {
-    int i;
     int j;
+    int i;
     int k;
     int x;
     int y;
@@ -238,6 +240,9 @@ void ECB(char *name, char *key,int t) {
     char name2[8];
     char ch1[200];
     char ch;
+    FLAG1 = 0;
+    S = 0;
+    T = 0;
     len = strlen(name);
     while (name[i] != '\0') {
         name1[i] = name[i];
@@ -291,6 +296,329 @@ void ECB(char *name, char *key,int t) {
         }
         printf("\n");
     }
+    if (n == 0) {
+        return;
+    }
+}
+
+void CBC(char *name, char *key, char *IV, int t) {
+    int len;
+    int i = 0;
+    int j;
+    int m = 0;
+    int n;
+    int p = 0;
+    int x = 0;
+    int k;
+    int out[64];
+    char tname[t][8];
+    char name1[8*t];
+    char name2[8];
+    char temp[8];
+    char ch1[200];
+    char ch;
+    FLAG1 = 0;
+    S = 0;
+    T = 0;
+    len = strlen(name);
+    while (name[i] != '\0') {
+        name1[i] = name[i];
+        i++;
+    }
+    if ((len/8) < t) {
+        for (i = len; i < 8*t; i++) {
+            name1[i] = 97;
+        }
+    }
+    j = 0;
+    for (i = 0; i < t*8; i++) {
+        if ((i%8 == 0) && (i != 0)) {
+            j++;
+        }
+        tname[j][i%8] = name1[i];
+    }
+    for (i = 0; i < 8; i++) {
+        tname[0][i] = tname[0][i]^IV[i];
+    }
+    CharToBit(key, 0);
+    CharToBit(tname[0], 1);
+    for (i = 1; i < t; i++) {
+        for (j = 0; j < 8; j++) {
+            temp[j] = (char)cipher[0][j];
+        }
+        for (j = 0; j < 8; j++) {
+            tname[i][j] = tname[i][j]^temp[j];
+        }
+        CharToBit(key, 0);
+        CharToBit(tname[i], 1);
+    }
+    for (i = 0; i < T; i++) {
+        for (j = 0; j < 64; j++) {
+            printf("%d ",Out[i][j]);
+        }
+        printf("\n");
+    }
+    printf("do you want to decrypt ECB?\n");
+    printf("1.Decryption\n");
+    printf("0.Exit\n");
+    scanf("%d", &n);
+    if (n == 1) {
+        FLAG1 = 1;
+        for (j = 0; j < 64; j++) {
+            out[j] = Out[0][j];
+        } 
+        CharToBit(key, 0);
+        Initplaint(out);
+        for (i = 0; i < 8; i++) {
+            cipher[0][i] = cipher[0][i]^IV[i];
+        }
+        for (i = 1; i < T; i++) {
+            for (j = 0; j < 64; j++) {
+                out[j] = Out[i][j];
+            }
+            CharToBit(key, 0);
+            Initplaint(out);
+            for (j = 0; j < 8; j++) {
+                    x = 0;
+                    k = 7;
+                    for (k = 7; k >=0; k--) { 
+                        x += (int)(Out[i-1][p] * pow(2,k));
+                        p++;
+                    }
+                    temp[j] = x;
+            }
+            for (j = 0; j < 8; j++) {
+                cipher[i][j] = cipher[i][j]^temp[j];
+            }
+        } 
+        for (i = 0; i < S; i++) {
+            for (j = 0; j < 8; j++) {
+                ch1[m] = (char)cipher[i][j];
+                m++;
+            }
+        }
+        for (i = 0; i < len; i++) {
+            ch = ch1[i];
+            printf("%c", ch);
+        }
+        printf("\n");
+    }
+    if (n == 0) {
+        return;
+    }
+}
+
+void OFB(char *name, char *key, char *IV, int t) {
+    int len;
+    int i = 0;
+    int j;
+    int x;
+    int k;
+    int p = 0;
+    int m = 0;
+    int n;
+    int h;
+    int out[64];
+    int temp1[8];
+    char tname[t][8];
+    char name1[8*t];
+    char ch1[200];
+    char ch;
+    char temp[8];
+    int  cipher2[t][8];
+    FLAG1 = 0;
+    T = 0;
+    S = 0;
+    len = strlen(name);
+    while (name[i] != '\0') {
+        name1[i] = name[i];
+        i++;
+    }
+    if ((len/8) < t) {
+        for (i = len; i < 8*t; i++) {
+            name1[i] = 97;
+        }
+    }
+    j = 0;
+    for (i = 0; i < t*8; i++) {
+        if ((i%8 == 0) && (i != 0)) {
+            j++;
+        }
+        tname[j][i%8] = name1[i];
+    }
+    CharToBit(key, 0);
+    CharToBit(IV, 1);
+    for (i = 0; i < 8; i++) {
+        ch = tname[0][i];
+        for (j = 0; j < 8; j++) {
+            out[8*i+7-j] = ch&1;
+            ch = (char)((int) ch >> 1);
+        }
+    }
+    for (i = 0; i < 64; i++) {
+        Out2[0][i] = out[i]^Out[0][i];
+    }
+    for (i = 0; i < 8; i++) {
+        temp[i] = (char)cipher[0][i];
+    }
+    p = 0;
+    for(i = 1; i < t; i++) {
+        CharToBit(key, 0);
+        CharToBit(temp, 1);
+        for (k = 0; k < 8; k++) {
+            ch = tname[i][k];
+            for (j = 0; j < 8; j++) {
+                out[8*k+7-j] = ch&1;
+                ch = (char)((int) ch >> 1);
+            }
+        }
+        for (j = 0; j < 64; j++) {
+            Out2[i][j] = Out[i][j]^out[j];
+        }
+        for (j = 0; j < 8; j++) {
+            temp[j] = (char)cipher[0][j];
+        }
+        
+    }
+    for (i = 0; i < T; i++) {
+        for (j = 0; j < 64; j++) {
+            printf("%d ",Out2[i][j]);
+        }
+        printf("\n");
+    }
+    printf("do you want to decrypt ECB?\n");
+    printf("1.Decryption\n");
+    printf("0.Exit\n");
+    scanf("%d", &n);
+    if (n == 1) {
+        FLAG1 = 1;
+        T = 0;
+        CharToBit(key, 0);
+        CharToBit(IV, 1);
+        j = 0;
+        for (i = 0; i < 8; i++) {
+                x = 0;
+                k = 7;
+                for (k = 7; k >=0; k--) { 
+                    x += (int)(Out2[0][j] * pow(2,k));
+                    j++;
+                }
+                temp1[i] = x;
+        }
+        for (i = 0; i < 8; i++) {
+            cipher2[0][i] = temp1[i]^cipher[0][i];
+        }
+        for (i = 0; i < 8; i++) {
+            temp[i] = (char)cipher[0][i];
+        }
+        for (i = 1; i < t; i++) {
+            CharToBit(key, 0);
+            CharToBit(temp, 1);
+            j = 0;
+            for (h = 0; h < 8; h++) {
+                    x = 0;
+                    k = 7;
+                    for (k = 7; k >=0; k--) { 
+                        x += (int)(Out2[i][j] * pow(2,k));
+                        j++;
+                    }
+                    temp1[h] = x;
+            }
+            for (j = 0; j < 8; j++) {
+                cipher2[i][j] = temp1[j]^cipher[i][j];
+            }
+            for (j = 0; j < 8; j++) {
+                temp[j] = (char)cipher[i][j];
+            }
+        }
+        for (i = 0; i < S; i++) {
+            for (j = 0; j < 8; j++) {
+                ch1[m] = (char)cipher2[i][j];
+                m++;
+            }
+        }
+        for (i = 0; i < len; i++) {
+            ch = ch1[i];
+            printf("%c", ch);
+        }
+        printf("\n");
+
+    }
+    if (n == 0) {
+        return;
+    }
+}
+
+void RC4(char *name, char *key, int length) {
+    int  i;
+    int  j;
+    int  t;
+    int  len;
+    int  temp;
+    int  k1;
+    int  x;
+    int  f;
+    int  n;
+    char k[length];
+    char a;
+    int  out[8*length];
+    int  S1[256];
+    int  T1[256];
+    char ciphern[length];
+    len = strlen(key);
+    for (i = 0; i < 256; i++) {
+        S1[i] = i;
+        T1[i] = key[i % length];
+    }
+    j = 0;
+    for (i = 0; i < 256; i++) {
+        j = (j + S1[i] + T1[i]) % 256;
+        temp = S1[i];
+        S1[i] = S1[j];
+        S1[j] = temp;
+    }
+    i = 0;
+    j = 0;
+    while(name[i] != '\0') {
+        i = (i + 1) % 256;
+        j = (j + S1[i]) % 256;
+        temp  = S1[i];
+        S1[i] = S1[j];
+        S1[j] = temp;
+        t = (S1[i] + S1[j]) % 256;
+        printf("%d\n", i);
+        k[i-1] = (char)S1[t];
+        ciphern[i-1] = name[i-1]^k[i-1];
+    }
+    f = i-1;
+    for (i = 0; i < f; i++) {
+        a = ciphern[i];
+        for (j = 0; j < 8; j++) {
+            out[8*i+7-j] = a&1;
+            a = (char)((int) a >> 1);
+        }
+    }
+    for (i = 0; i < 8*length; i++) {
+        printf("%d ",out[i]);
+    }
+    printf("\n");
+    printf("do you want to decrypt ECB?\n");
+    printf("1.Decryption\n");
+    printf("0.Exit\n");
+    scanf("%d", &n);
+    if (n == 1) {
+        for (i = 0; i < length; i++) {
+            ciphern[i] = ciphern[i]^k[i]; 
+        }
+        for (i = 0; i < length; i++) {
+            printf("%c", ciphern[i]);
+        }
+        printf("\n");
+    }
+    if (n == 0) {
+        return;
+    }
+
 }
 
 void main() {
@@ -298,23 +626,44 @@ void main() {
     int  j;
     int  len;
     int  t;
+    int flag;
     char name[200];// = "testdata";
     char key[8]; //= "mydeskey";
     char ch;
+    char IV[8];
 
-    printf("please input 8 bytes for plaintext: ");
-    scanf("%s",name);
+    printf("1.ECB\n");
+    printf("2.CBC\n");
+    printf("3.OFB\n");
+    printf("4.RC4\n");
+    scanf("%d", &flag);
+
+    printf("please input the plaintext: ");
+    scanf("%s", name);
     printf("please input 8 bytes for key: ");
-    scanf("%s",key);
-
+    scanf("%s", key);
     len = strlen(name);
     if (len%8 == 0) {
         t = len / 8;
     } else {
         t = len/8 + 1;
     }
-    ECB(name, key, t);
+    if (flag == 2) {
+        printf("please input 8 bytes for IV: ");
+        scanf("%s", IV);
 
-    
+        CBC(name, key, IV, t);
+    }
+    if (flag == 1) {
+        ECB(name, key, t);
+    }
+    if (flag == 3) {
+        printf("please input 8 bytes for IV: ");
+        scanf("%s", IV);
+        OFB(name, key, IV, t);
+    }
+    if (flag == 4) {
+        RC4(name, key, len);
+    }
 
 }
