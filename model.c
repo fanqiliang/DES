@@ -250,16 +250,18 @@ void ECB(char *name, char *key,int t) {
     }
     if ((len/8) < t) {
         for (i = len; i < 8*t; i++) {
-            name1[i] = 97;
+            name1[i] = 97; //填充数据，填充的为‘a’
         }
     }
     j = 0;
+    //进行分组
     for (i = 0; i < t*8; i++) {
         if ((i%8 == 0) && (i != 0)) {
             j++;
         }
         tname[j][i%8] = name1[i];
     }
+    //开始加密
     for (i = 0; i < t; i++) {
         CharToBit(key, 0);
         CharToBit(tname[i], 1);
@@ -314,7 +316,8 @@ void CBC(char *name, char *key, char *IV, int t) {
     char tname[t][8];
     char name1[8*t];
     char name2[8];
-    char temp[8];
+    int  temp[8];
+    char ctemp[8];
     char ch1[200];
     char ch;
     FLAG1 = 0;
@@ -325,12 +328,14 @@ void CBC(char *name, char *key, char *IV, int t) {
         name1[i] = name[i];
         i++;
     }
+    //数据填充
     if ((len/8) < t) {
         for (i = len; i < 8*t; i++) {
             name1[i] = 97;
         }
     }
     j = 0;
+    //分组
     for (i = 0; i < t*8; i++) {
         if ((i%8 == 0) && (i != 0)) {
             j++;
@@ -340,19 +345,24 @@ void CBC(char *name, char *key, char *IV, int t) {
     for (i = 0; i < 8; i++) {
         tname[0][i] = tname[0][i]^IV[i];
     }
+    //第一次加密，单独处理
     CharToBit(key, 0);
     CharToBit(tname[0], 1);
+    //第二次及以后
     for (i = 1; i < t; i++) {
         for (j = 0; j < 8; j++) {
-            temp[j] = (char)cipher[0][j];
+            temp[j] = cipher[0][j];
         }
         for (j = 0; j < 8; j++) {
-            tname[i][j] = tname[i][j]^temp[j];
+            ctemp[j] = (char)temp[j];
+        }
+        for (j = 0; j < 8; j++) {
+            tname[i][j] = tname[i][j]^ctemp[j];
         }
         CharToBit(key, 0);
         CharToBit(tname[i], 1);
     }
-    for (i = 0; i < T; i++) {
+    for (i = 0; i < t; i++) {
         for (j = 0; j < 64; j++) {
             printf("%d ",Out[i][j]);
         }
@@ -372,12 +382,13 @@ void CBC(char *name, char *key, char *IV, int t) {
         for (i = 0; i < 8; i++) {
             cipher[0][i] = cipher[0][i]^IV[i];
         }
-        for (i = 1; i < T; i++) {
+        for (i = 1; i < t; i++) {
             for (j = 0; j < 64; j++) {
                 out[j] = Out[i][j];
             }
             CharToBit(key, 0);
             Initplaint(out);
+            p = 0;
             for (j = 0; j < 8; j++) {
                     x = 0;
                     k = 7;
@@ -391,7 +402,7 @@ void CBC(char *name, char *key, char *IV, int t) {
                 cipher[i][j] = cipher[i][j]^temp[j];
             }
         } 
-        for (i = 0; i < S; i++) {
+        for (i = 0; i < t; i++) {
             for (j = 0; j < 8; j++) {
                 ch1[m] = (char)cipher[i][j];
                 m++;
@@ -434,18 +445,21 @@ void OFB(char *name, char *key, char *IV, int t) {
         name1[i] = name[i];
         i++;
     }
+    //数据填充
     if ((len/8) < t) {
         for (i = len; i < 8*t; i++) {
             name1[i] = 97;
         }
     }
     j = 0;
+    //分组
     for (i = 0; i < t*8; i++) {
         if ((i%8 == 0) && (i != 0)) {
             j++;
         }
         tname[j][i%8] = name1[i];
     }
+    //第一组加密
     CharToBit(key, 0);
     CharToBit(IV, 1);
     for (i = 0; i < 8; i++) {
@@ -462,6 +476,7 @@ void OFB(char *name, char *key, char *IV, int t) {
         temp[i] = (char)cipher[0][i];
     }
     p = 0;
+    //第二组及以后加密
     for(i = 1; i < t; i++) {
         CharToBit(key, 0);
         CharToBit(temp, 1);
@@ -493,6 +508,7 @@ void OFB(char *name, char *key, char *IV, int t) {
     if (n == 1) {
         FLAG1 = 1;
         T = 0;
+        //第一轮解密
         CharToBit(key, 0);
         CharToBit(IV, 1);
         j = 0;
@@ -511,6 +527,7 @@ void OFB(char *name, char *key, char *IV, int t) {
         for (i = 0; i < 8; i++) {
             temp[i] = (char)cipher[0][i];
         }
+        //第二轮及以后解密
         for (i = 1; i < t; i++) {
             CharToBit(key, 0);
             CharToBit(temp, 1);
@@ -531,7 +548,7 @@ void OFB(char *name, char *key, char *IV, int t) {
                 temp[j] = (char)cipher[i][j];
             }
         }
-        for (i = 0; i < S; i++) {
+        for (i = 0; i < t; i++) {
             for (j = 0; j < 8; j++) {
                 ch1[m] = (char)cipher2[i][j];
                 m++;
@@ -566,6 +583,7 @@ void RC4(char *name, char *key, int length) {
     int  T1[256];
     char ciphern[length];
     len = strlen(key);
+    //初始置换
     for (i = 0; i < 256; i++) {
         S1[i] = i;
         T1[i] = key[i % length];
@@ -579,6 +597,7 @@ void RC4(char *name, char *key, int length) {
     }
     i = 0;
     j = 0;
+    //产生密钥以及加密
     while(name[i] != '\0') {
         i = (i + 1) % 256;
         j = (j + S1[i]) % 256;
@@ -586,7 +605,6 @@ void RC4(char *name, char *key, int length) {
         S1[i] = S1[j];
         S1[j] = temp;
         t = (S1[i] + S1[j]) % 256;
-        printf("%d\n", i);
         k[i-1] = (char)S1[t];
         ciphern[i-1] = name[i-1]^k[i-1];
     }
@@ -627,43 +645,51 @@ void main() {
     int  len;
     int  t;
     int flag;
+    int t_flag = 1;
     char name[200];// = "testdata";
     char key[8]; //= "mydeskey";
     char ch;
     char IV[8];
+    
+    while(t_flag) {
+        printf("1.ECB\n");
+        printf("2.CBC\n");
+        printf("3.OFB\n");
+        printf("4.RC4\n");
+        printf("0.exit\n");
+        scanf("%d", &flag);
 
-    printf("1.ECB\n");
-    printf("2.CBC\n");
-    printf("3.OFB\n");
-    printf("4.RC4\n");
-    scanf("%d", &flag);
+        if (flag == 0) {
+            t_flag = 0; 
+        } else {
+            printf("please input the plaintext: ");
+            scanf("%s", name);
+            printf("please input 8 bytes for key: ");
+            scanf("%s", key);
+        }
+        len = strlen(name);
+        if (len%8 == 0) {
+            t = len / 8;
+        } else {
+            t = len/8 + 1;
+        }
+        if (flag == 2) {
+            printf("please input 8 bytes for IV: ");
+            scanf("%s", IV);
 
-    printf("please input the plaintext: ");
-    scanf("%s", name);
-    printf("please input 8 bytes for key: ");
-    scanf("%s", key);
-    len = strlen(name);
-    if (len%8 == 0) {
-        t = len / 8;
-    } else {
-        t = len/8 + 1;
-    }
-    if (flag == 2) {
-        printf("please input 8 bytes for IV: ");
-        scanf("%s", IV);
-
-        CBC(name, key, IV, t);
-    }
-    if (flag == 1) {
-        ECB(name, key, t);
-    }
-    if (flag == 3) {
-        printf("please input 8 bytes for IV: ");
-        scanf("%s", IV);
-        OFB(name, key, IV, t);
-    }
-    if (flag == 4) {
-        RC4(name, key, len);
+            CBC(name, key, IV, t);
+        }
+        if (flag == 1) {
+            ECB(name, key, t);
+        }
+        if (flag == 3) {
+            printf("please input 8 bytes for IV: ");
+            scanf("%s", IV);
+            OFB(name, key, IV, t);
+        }
+        if (flag == 4) {
+            RC4(name, key, len);
+        }
     }
 
 }
